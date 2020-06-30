@@ -405,6 +405,7 @@ func TestTopicNodeMatch9(t *testing.T) {
 }
 
 func BenchmarkTopicNode(b *testing.B) {
+	entities := make([]interface{}, 0)
 	n := newTopicNode()
 	defer func() {
 		err := n.close()
@@ -417,13 +418,34 @@ func BenchmarkTopicNode(b *testing.B) {
 	for i := 0; i < 32; i++ {
 		ti := []byte(fmt.Sprintf("sport/%d/#", i))
 		require.NoError(b, n.insertEntity(ti, "ent1"))
+		require.NoError(b, n.matchEntities(ti, &entities))
 		for j := 0; j < 32; j++ {
 			tj := []byte(fmt.Sprintf("sport/%d/+/%d/#", i, j))
 			require.NoError(b, n.insertEntity(tj, "ent2"))
+			require.NoError(b, n.matchEntities(tj, &entities))
 			for k := 0; k < 32; k++ {
 				tk := []byte(fmt.Sprintf("sport/%d/player/%d/%d", i, j, k))
 				require.NoError(b, n.insertEntity(tk, "ent3"))
+				require.NoError(b, n.matchEntities(tk, &entities))
+
 				require.NoError(b, n.removeEntity(tk, "ent3"))
+				require.NoError(b, n.matchEntities(tk, &entities))
+			}
+			for k := 0; k < 32; k++ {
+				tk := []byte(fmt.Sprintf("sport/%d/tom/%d/%d", i, j, k))
+				require.NoError(b, n.insertEntity(tk, "ent4"))
+				require.NoError(b, n.matchEntities(tk, &entities))
+
+				require.NoError(b, n.removeEntity(tk, "ent4"))
+				require.NoError(b, n.matchEntities(tk, &entities))
+			}
+			for k := 0; k < 32; k++ {
+				tk := []byte(fmt.Sprintf("sport/%d/jack/%d/%d", i, j, k))
+				require.NoError(b, n.insertEntity(tk, "ent5"))
+				require.NoError(b, n.matchEntities(tk, &entities))
+
+				require.NoError(b, n.removeEntity(tk, "ent5"))
+				require.NoError(b, n.matchEntities(tk, &entities))
 			}
 			require.NoError(b, n.removeEntity(tj, "ent2"))
 		}
