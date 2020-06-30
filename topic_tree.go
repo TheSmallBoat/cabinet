@@ -5,18 +5,17 @@ import (
 	"sync"
 )
 
-type topicTree struct {
+type tTree struct {
 	mu sync.RWMutex
 
-	//topic tree
-	root *tNode
+	root *tNode // topic tree root node
 }
 
-func NewTopicTree() *topicTree {
-	return &topicTree{root: newTopicNode()}
+func NewTopicTree() *tTree {
+	return &tTree{root: newTopicNode()}
 }
 
-func (tr *topicTree) EntityLink(topic []byte, entity interface{}) error {
+func (tr *tTree) EntityLink(topic []byte, entity interface{}) error {
 	if entity == nil {
 		return fmt.Errorf("topicTree/EntityLink: entry cannot be nil")
 	}
@@ -26,7 +25,7 @@ func (tr *topicTree) EntityLink(topic []byte, entity interface{}) error {
 	return tr.root.insertEntity(topic, entity)
 }
 
-func (tr *topicTree) EntityUnLink(topic []byte, entity interface{}) error {
+func (tr *tTree) EntityUnLink(topic []byte, entity interface{}) error {
 	tr.mu.Lock()
 	defer tr.mu.Unlock()
 
@@ -34,7 +33,7 @@ func (tr *topicTree) EntityUnLink(topic []byte, entity interface{}) error {
 }
 
 // Returned values will be invalidated by the next ConnectedEntities call
-func (tr *topicTree) LinkedEntities(topic []byte, entities *[]interface{}) error {
+func (tr *tTree) LinkedEntities(topic []byte, entities *[]interface{}) error {
 	tr.mu.RLock()
 	defer tr.mu.RUnlock()
 
@@ -43,7 +42,12 @@ func (tr *topicTree) LinkedEntities(topic []byte, entities *[]interface{}) error
 	return tr.root.matchEntities(topic, entities)
 }
 
-func (tr *topicTree) Close() error {
+func (tr *tTree) Close() error {
+	err := tr.root.close()
 	tr.root = nil
+
+	if err != nil {
+		return err
+	}
 	return nil
 }

@@ -1,6 +1,7 @@
 package cabinet
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -47,7 +48,6 @@ func TestNextTopicLevelSuccess(t *testing.T) {
 			require.Equal(t, level, tl)
 		}
 	}
-
 }
 
 func TestNextTopicLevelFailure(t *testing.T) {
@@ -87,6 +87,11 @@ func TestTopicNodeInsert1(t *testing.T) {
 	defer goleak.VerifyNone(t)
 
 	n := newTopicNode()
+	defer func() {
+		err := n.close()
+		require.NoError(t, err)
+	}()
+
 	topic := []byte("sport/tennis/player1/#")
 
 	err := n.insertEntity(topic, "ent1")
@@ -120,6 +125,11 @@ func TestTopicNodeInsert2(t *testing.T) {
 	defer goleak.VerifyNone(t)
 
 	n := newTopicNode()
+	defer func() {
+		err := n.close()
+		require.NoError(t, err)
+	}()
+
 	topic := []byte("#")
 
 	err := n.insertEntity(topic, "ent1")
@@ -138,6 +148,11 @@ func TestTopicNodeInsert3(t *testing.T) {
 	defer goleak.VerifyNone(t)
 
 	n := newTopicNode()
+	defer func() {
+		err := n.close()
+		require.NoError(t, err)
+	}()
+
 	topic := []byte("+/tennis/#")
 
 	err := n.insertEntity(topic, "ent1")
@@ -166,6 +181,11 @@ func TestTopicNodeInsert4(t *testing.T) {
 	defer goleak.VerifyNone(t)
 
 	n := newTopicNode()
+	defer func() {
+		err := n.close()
+		require.NoError(t, err)
+	}()
+
 	topic := []byte("/finance")
 
 	err := n.insertEntity(topic, "ent1")
@@ -190,6 +210,11 @@ func TestTopicNodeInsertDup(t *testing.T) {
 	defer goleak.VerifyNone(t)
 
 	n := newTopicNode()
+	defer func() {
+		err := n.close()
+		require.NoError(t, err)
+	}()
+
 	topic := []byte("/finance")
 
 	err := n.insertEntity(topic, "ent1")
@@ -214,6 +239,11 @@ func TestTopicNodeRemove1(t *testing.T) {
 	defer goleak.VerifyNone(t)
 
 	n := newTopicNode()
+	defer func() {
+		err := n.close()
+		require.NoError(t, err)
+	}()
+
 	topic := []byte("sport/tennis/player1/#")
 
 	require.NoError(t, n.insertEntity(topic, "ent1"))
@@ -227,6 +257,11 @@ func TestTopicNodeRemove2(t *testing.T) {
 	defer goleak.VerifyNone(t)
 
 	n := newTopicNode()
+	defer func() {
+		err := n.close()
+		require.NoError(t, err)
+	}()
+
 	topic := []byte("sport/tennis/player1/#")
 
 	require.NoError(t, n.insertEntity(topic, "ent1"))
@@ -240,6 +275,11 @@ func TestTopicNodeRemove3(t *testing.T) {
 	defer goleak.VerifyNone(t)
 
 	n := newTopicNode()
+	defer func() {
+		err := n.close()
+		require.NoError(t, err)
+	}()
+
 	topic := []byte("sport/tennis/player1/#")
 
 	require.NoError(t, n.insertEntity(topic, "ent1"))
@@ -254,6 +294,11 @@ func TestTopicNodeMatch1(t *testing.T) {
 	defer goleak.VerifyNone(t)
 
 	n := newTopicNode()
+	defer func() {
+		err := n.close()
+		require.NoError(t, err)
+	}()
+
 	topic := []byte("sport/tennis/player1/#")
 	require.NoError(t, n.insertEntity(topic, "ent1"))
 
@@ -268,6 +313,11 @@ func TestTopicNodeMatch2(t *testing.T) {
 	defer goleak.VerifyNone(t)
 
 	n := newTopicNode()
+	defer func() {
+		err := n.close()
+		require.NoError(t, err)
+	}()
+
 	require.NoError(t, n.insertEntity([]byte("sport/tennis/+/tom"), "ent1"))
 	require.NoError(t, n.insertEntity([]byte("sport/tennis/player1/tom"), "ent2"))
 
@@ -282,6 +332,11 @@ func TestTopicNodeMatch3(t *testing.T) {
 	defer goleak.VerifyNone(t)
 
 	n := newTopicNode()
+	defer func() {
+		err := n.close()
+		require.NoError(t, err)
+	}()
+
 	require.NoError(t, n.insertEntity([]byte("sport/tennis/#"), "ent1"))
 	require.NoError(t, n.insertEntity([]byte("sport/tennis"), "ent2"))
 
@@ -297,6 +352,11 @@ func TestTopicNodeMatch4(t *testing.T) {
 	defer goleak.VerifyNone(t)
 
 	n := newTopicNode()
+	defer func() {
+		err := n.close()
+		require.NoError(t, err)
+	}()
+
 	require.NoError(t, n.insertEntity([]byte("+/+"), "ent1"))
 
 	entities := make([]interface{}, 0, 5)
@@ -311,6 +371,11 @@ func TestTopicNodeMatch5(t *testing.T) {
 	defer goleak.VerifyNone(t)
 
 	n := newTopicNode()
+	defer func() {
+		err := n.close()
+		require.NoError(t, err)
+	}()
+
 	require.NoError(t, n.insertEntity([]byte("/+"), "ent1"))
 
 	entities := make([]interface{}, 0, 5)
@@ -325,6 +390,11 @@ func TestTopicNodeMatch9(t *testing.T) {
 	defer goleak.VerifyNone(t)
 
 	n := newTopicNode()
+	defer func() {
+		err := n.close()
+		require.NoError(t, err)
+	}()
+
 	require.NoError(t, n.insertEntity([]byte("+"), "ent1"))
 
 	entities := make([]interface{}, 0, 5)
@@ -332,4 +402,31 @@ func TestTopicNodeMatch9(t *testing.T) {
 	err := n.matchEntities([]byte("/finance"), &entities)
 	require.NoError(t, err)
 	require.Equal(t, 0, len(entities))
+}
+
+func BenchmarkTopicNode(b *testing.B) {
+	n := newTopicNode()
+	defer func() {
+		err := n.close()
+		require.NoError(b, err)
+	}()
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for i := 0; i < 32; i++ {
+		ti := []byte(fmt.Sprintf("sport/%d/#", i))
+		require.NoError(b, n.insertEntity(ti, "ent1"))
+		for j := 0; j < 32; j++ {
+			tj := []byte(fmt.Sprintf("sport/%d/+/%d/#", i, j))
+			require.NoError(b, n.insertEntity(tj, "ent2"))
+			for k := 0; k < 32; k++ {
+				tk := []byte(fmt.Sprintf("sport/%d/player/%d/%d", i, j, k))
+				require.NoError(b, n.insertEntity(tk, "ent3"))
+				require.NoError(b, n.removeEntity(tk, "ent3"))
+			}
+			require.NoError(b, n.removeEntity(tj, "ent2"))
+		}
+		require.NoError(b, n.removeEntity(ti, "ent1"))
+	}
 }

@@ -39,7 +39,24 @@ type tNode struct {
 }
 
 func newTopicNode() *tNode {
-	return &tNode{nltNodes: make(map[string]*tNode)}
+	return topicNodePool.acquire()
+}
+
+func (tn *tNode) close() error {
+	tn.entities = tn.entities[0:0]
+	for level, nltn := range tn.nltNodes {
+		delete(tn.nltNodes, level)
+		err := nltn.close()
+		if err != nil {
+			return fmt.Errorf("%s, found in next level: '%s'", err, level)
+		}
+	}
+	if len(tn.entities) == 0 && len(tn.nltNodes) == 0 {
+		topicNodePool.release(tn)
+		return nil
+	} else {
+		return fmt.Errorf("topicNode/close: Cleanup not completed, still have [%d] entities, [%d] next level nodes", len(tn.entities), len(tn.nltNodes))
+	}
 }
 
 func (tn *tNode) insertEntity(topic []byte, entity interface{}) error {
@@ -71,13 +88,13 @@ func (tn *tNode) insertEntity(topic []byte, entity interface{}) error {
 	level := string(ntl)
 
 	// Add tNode if it doesn't already exist
-	n, ok := tn.nltNodes[level]
+	nltn, ok := tn.nltNodes[level]
 	if !ok {
-		n = newTopicNode()
-		tn.nltNodes[level] = n
+		nltn = newTopicNode()
+		tn.nltNodes[level] = nltn
 	}
 
-	return n.insertEntity(rem, entity)
+	return nltn.insertEntity(rem, entity)
 }
 
 // the entity matches then it's removed
@@ -114,20 +131,21 @@ func (tn *tNode) removeEntity(topic []byte, entity interface{}) error {
 	level := string(ntl)
 
 	// Find the tNode that matches the topic level
-	n, ok := tn.nltNodes[level]
+	nltn, ok := tn.nltNodes[level]
 	if !ok {
 		return fmt.Errorf("topicNode/remove: No topic found")
 	}
 
-	// Remove the subscriber from the next level tNode
-	if err := n.removeEntity(rem, entity); err != nil {
+	// Remove the entity from the next level tNode
+	if err := nltn.removeEntity(rem, entity); err != nil {
 		return err
 	}
 
 	// If there are no more entities and nltNodes to the next level we just visited
 	// let's remove it
-	if len(n.entities) == 0 && len(n.nltNodes) == 0 {
+	if len(nltn.entities) == 0 && len(nltn.nltNodes) == 0 {
 		delete(tn.nltNodes, level)
+		topicNodePool.release(nltn)
 	}
 
 	return nil
@@ -159,12 +177,12 @@ func (tn *tNode) matchEntities(topic []byte, entities *[]interface{}) error {
 
 	level := string(ntl)
 
-	for k, n := range tn.nltNodes {
+	for k, nltn := range tn.nltNodes {
 		// If the key is "#", then these entities are added to the result set
 		if k == MWC {
-			n.appendEntities(entities)
+			nltn.appendEntities(entities)
 		} else if k == SWC || k == level {
-			if err := n.matchEntities(rem, entities); err != nil {
+			if err := nltn.matchEntities(rem, entities); err != nil {
 				return err
 			}
 		}
