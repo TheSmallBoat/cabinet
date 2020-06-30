@@ -20,7 +20,7 @@ func TestTopicTree(t *testing.T) {
 
 	entities := make([]interface{}, 0, 5)
 
-	require.NoError(t, tt.ConnectedEntities([]byte("sports/tennis/tom/stats"), &entities))
+	require.NoError(t, tt.LinkedEntities([]byte("sports/tennis/tom/stats"), &entities))
 	require.Equal(t, 1, len(entities))
 	require.Equal(t, "ent1", entities[0])
 
@@ -31,6 +31,9 @@ func TestTopicTree(t *testing.T) {
 
 func BenchmarkTopicTreeLink(b *testing.B) {
 	tt := NewTopicTree()
+	defer func() {
+		require.NoError(b, tt.Close())
+	}()
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -47,6 +50,9 @@ func BenchmarkTopicTreeLink(b *testing.B) {
 
 func BenchmarkTopicTreeUnLink(b *testing.B) {
 	tt := NewTopicTree()
+	defer func() {
+		require.NoError(b, tt.Close())
+	}()
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -67,33 +73,49 @@ func BenchmarkTopicTreeUnLink(b *testing.B) {
 	}
 }
 
-func BenchmarkTopicTreeConnectedEntities(b *testing.B) {
+func BenchmarkTopicTreeLinkedEntities(b *testing.B) {
 	tt := NewTopicTree()
+	defer func() {
+		require.NoError(b, tt.Close())
+	}()
 
 	b.ReportAllocs()
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		err := tt.EntityLink([]byte("sports/tennis/+/stats"), "ent1")
-		if err != nil {
-			b.Fatal(err)
-		}
-		err = tt.EntityLink([]byte("sports/tennis/tom/stats"), "ent2")
-		if err != nil {
-			b.Fatal(err)
-		}
+		topic := []byte(fmt.Sprintf("sports/tennis/joe/%d/stats", i))
+		entity := fmt.Sprintf("ent_%d", i)
+		require.NoError(b, tt.EntityLink(topic, entity))
 
-		err = tt.EntityLink([]byte("sports/tennis/jack/stats"), "ent3")
-		if err != nil {
-			b.Fatal(err)
-		}
+		topic = []byte(fmt.Sprintf("sports/tennis/tom/%d/stats", i))
+		require.NoError(b, tt.EntityLink(topic, entity))
+
+		topic = []byte(fmt.Sprintf("sports/tennis/+/%d/stats", i))
+		require.NoError(b, tt.EntityLink(topic, entity))
 
 		entities := make([]interface{}, 0, 5)
-
-		err = tt.ConnectedEntities([]byte("sports/tennis/tom/stats"), &entities)
-		if err != nil {
-			b.Fatal(err)
-		}
+		topic = []byte(fmt.Sprintf("sports/tennis/tom/%d/stats", i))
+		require.NoError(b, tt.LinkedEntities(topic, &entities))
 		require.Equal(b, 2, len(entities))
 	}
+}
+
+func BenchmarkParallelTopicTreeLink(b *testing.B) {
+	tt := NewTopicTree()
+	defer func() {
+		require.NoError(b, tt.Close())
+	}()
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	i := 0
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			topic := []byte(fmt.Sprintf("sports/tennis/joe/%d/stats", i))
+			entity := fmt.Sprintf("ent_%d", i)
+			require.NoError(b, tt.EntityLink(topic, entity))
+			i++
+		}
+	})
 }

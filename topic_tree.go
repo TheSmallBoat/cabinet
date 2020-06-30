@@ -34,7 +34,7 @@ func (tr *topicTree) EntityUnLink(topic []byte, entity interface{}) error {
 }
 
 // Returned values will be invalidated by the next ConnectedEntities call
-func (tr *topicTree) ConnectedEntities(topic []byte, entities *[]interface{}) error {
+func (tr *topicTree) LinkedEntities(topic []byte, entities *[]interface{}) error {
 	tr.mu.RLock()
 	defer tr.mu.RUnlock()
 
