@@ -1,4 +1,4 @@
-module cabinet
+module "github.com/TheSmallBoat/cabinet"
 
 go 1.14
 
