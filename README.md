@@ -1,5 +1,5 @@
 # cabinet
-A tree-structure topics manager in Go with zero memory allocations.
+A library for the tree-structure topics manager in Go with zero memory allocations.
 
 ```
 % sysctl -a | grep machdep.cpu | grep 'brand_'
