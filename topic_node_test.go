@@ -57,6 +57,7 @@ func TestNextTopicLevelFailure(t *testing.T) {
 		[]byte("sport/tennis#"),
 		[]byte("sport/tennis/#/ranking"),
 		[]byte("sport+"),
+		[]byte("#+"),
 	}
 
 	var (
@@ -80,6 +81,9 @@ func TestNextTopicLevelFailure(t *testing.T) {
 	require.Error(t, err)
 
 	_, rem, err = nextTopicLevel(topics[2])
+	require.Error(t, err)
+
+	_, rem, err = nextTopicLevel(topics[3])
 	require.Error(t, err)
 }
 

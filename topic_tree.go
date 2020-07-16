@@ -46,8 +46,5 @@ func (tr *TTree) Close() error {
 	err := tr.root.close()
 	tr.root = nil
 
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
